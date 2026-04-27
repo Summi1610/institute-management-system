@@ -38,5 +38,6 @@ frontend/.eslintcache
 Thumbs.db
 
 # Docker
-.docker/
 .env
+backend/.m2/
+backend/uploads/

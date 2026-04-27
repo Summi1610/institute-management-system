@@ -2,6 +2,7 @@ package com.academic.cpv.controller;
 
 import com.academic.cpv.model.ERole;
 import com.academic.cpv.model.User;
+import com.academic.cpv.payload.request.ForgotPasswordRequest;
 import com.academic.cpv.payload.request.LoginRequest;
 import com.academic.cpv.payload.request.SignupRequest;
 import com.academic.cpv.payload.response.JwtResponse;
@@ -11,6 +12,7 @@ import com.academic.cpv.security.jwt.JwtUtils;
 import com.academic.cpv.security.services.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment; // Import Environment
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,8 +40,11 @@ public class AuthController {
     @Autowired
     com.academic.cpv.service.EmailService emailService;
 
+    @Autowired // Inject Environment
+    private Environment env;
+
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody com.academic.cpv.payload.request.ForgotPasswordRequest request) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElse(null);
 
@@ -53,12 +58,20 @@ public class AuthController {
             user.setResetPasswordTokenExpiry(java.time.LocalDateTime.now().plusHours(1));
             userRepository.save(user);
 
-            String resetLink = "http://localhost:5173/reset-password?token=" + token;
+            // --- MODIFICATION START ---
+            // Get the frontend URL from environment variables, default to localhost for development
+            String frontendUrl = env.getProperty("FRONTEND_URL", "http://localhost:5173");
+            String resetLink = frontendUrl + "/reset-password?token=" + token;
+            // --- MODIFICATION END ---
+
             emailService.sendEmail(user.getEmail(), "Password Reset Request",
-                    "To reset your password, click the link below:\n" + resetLink);
+                    "To reset your password, click the link below:
+" + resetLink);
 
             return ResponseEntity.ok(new MessageResponse("Password reset link sent to your email."));
         } catch (Exception e) {
+            // Log the exception for debugging purposes
+            e.printStackTrace(); // Consider using a proper logger in a real application
             return ResponseEntity.internalServerError().body(new MessageResponse("Error: Failed to send email. Please check your SMTP configuration."));
         }
     }
@@ -143,7 +156,7 @@ public class AuthController {
                 .email(signUpRequest.getEmail())
                 .password(encoder.encode(signUpRequest.getPassword()))
                 .role(role)
-                .isApproved(role == ERole.ROLE_ADMIN) 
+                .isApproved(role == ERole.ROLE_ADMIN)
                 .build();
 
         userRepository.save(user);
