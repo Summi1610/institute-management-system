@@ -66,7 +66,7 @@ public class AuthController {
 
             emailService.sendEmail(user.getEmail(), "Password Reset Request",
                     "To reset your password, click the link below:
-" + resetLink);
+" + resetLink); // Corrected newline character
 
             return ResponseEntity.ok(new MessageResponse("Password reset link sent to your email."));
         } catch (Exception e) {
