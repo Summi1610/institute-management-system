@@ -12,11 +12,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users",
-    uniqueConstraints = {
+@Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "username"),
         @UniqueConstraint(columnNames = "email")
-    })
+})
 @Data
 @Builder
 @NoArgsConstructor
@@ -44,12 +43,9 @@ public class User {
     private ERole role;
 
     @Builder.Default
-    private boolean isVerified = false;
+    private boolean isApproved = false;
 
     private LocalDateTime trialStartDate;
-
-    @Builder.Default
-    private boolean isApproved = false;
 
     @Builder.Default
     private boolean trialExpired = false;

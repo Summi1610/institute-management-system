@@ -88,18 +88,24 @@ public class AuthController {
                 .orElse(null);
 
         if (user != null && user.getRole() != ERole.ROLE_ADMIN) {
-            if (!user.isApproved() && !user.isVerified()) {
-                String message = user.isTrialExpired() 
-                    ? "Error: Your 7-day trial has expired. Please contact admin for access."
-                    : "Error: Your access has been revoked. Please contact admin.";
+            // Access granted if isApproved OR !trialExpired
+            // Access denied ONLY if NOT isApproved AND trialExpired
+            if (!user.isApproved() && user.isTrialExpired()) {
                 return ResponseEntity
                         .status(org.springframework.http.HttpStatus.FORBIDDEN)
-                        .body(new MessageResponse(message));
+                        .body(new MessageResponse("Error: Your 7-day trial has expired. Please contact admin for full access."));
             }
         }
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("Error: Invalid username or password"));
+        }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
@@ -112,7 +118,7 @@ public class AuthController {
                 userDetails.getUsername(),
                 userDetails.getEmail(),
                 role,
-                userDetails.isVerified()));
+                user.isApproved())); // Use isApproved instead of isVerified in response
     }
 
     @PostMapping("/signup")
@@ -138,7 +144,6 @@ public class AuthController {
                 .password(encoder.encode(signUpRequest.getPassword()))
                 .role(role)
                 .isApproved(role == ERole.ROLE_ADMIN) 
-                .isVerified(true) // Verified for trial access
                 .build();
 
         userRepository.save(user);

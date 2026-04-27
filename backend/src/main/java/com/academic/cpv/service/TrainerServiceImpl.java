@@ -1,5 +1,6 @@
 package com.academic.cpv.service;
 
+import com.academic.cpv.exception.AppException;
 import com.academic.cpv.exception.ResourceNotFoundException;
 import com.academic.cpv.model.*;
 import com.academic.cpv.repository.*;
@@ -26,14 +27,24 @@ public class TrainerServiceImpl implements TrainerService {
     @Autowired
     StudentTaskRepository studentTaskRepository;
 
+    private User getVerifiedTrainer(String username) {
+        User trainer = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+
+        if (trainer.getRole() != ERole.ROLE_ADMIN && !trainer.isApproved() && trainer.isTrialExpired()) {
+            throw new AppException("Your 7-day trial has expired. Please contact admin for verification.");
+        }
+        return trainer;
+    }
+
     @Override
     public List<Batch> getMyBatches(String username) {
-        User trainer = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Trainer", "username", username));
+        User trainer = getVerifiedTrainer(username);
         return batchRepository.findByTrainer(trainer);
     }
 
     @Override
+    @Transactional
     public List<Task> getBatchTasks(Long batchId) {
         batchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch", "id", batchId));

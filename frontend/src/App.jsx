@@ -14,7 +14,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (loading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" />;
   if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" />;
-  if (user.role === 'ROLE_STUDENT' && !(user.isVerified ?? user.verified)) return <Navigate to="/pending" />;
 
   return children;
 };

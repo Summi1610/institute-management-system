@@ -1,7 +1,7 @@
 package com.academic.cpv.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,11 +18,17 @@ public class Material {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
     private String title;
 
-    @NotBlank
     private String url;
+
+    private String fileName;
+
+    private String fileContentType;
+
+    @Lob
+    @JsonIgnore
+    private byte[] fileData;
 
     @Enumerated(EnumType.STRING)
     private EMaterialType type;

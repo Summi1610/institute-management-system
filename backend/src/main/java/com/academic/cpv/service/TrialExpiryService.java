@@ -28,16 +28,12 @@ public class TrialExpiryService {
         logger.info("Checking for expired trials...");
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
 
-        List<User> usersToRevoke = userRepository.findAll().stream()
-                .filter(user -> !user.isApproved() && !user.isTrialExpired())
-                .filter(user -> user.getTrialStartDate() != null && user.getTrialStartDate().isBefore(sevenDaysAgo))
-                .toList();
+        List<User> usersToRevoke = userRepository.findExpiredTrials(sevenDaysAgo);
 
         for (User user : usersToRevoke) {
             user.setTrialExpired(true);
-            user.setVerified(false); // Invalidate session or access
             userRepository.save(user);
-            
+
             try {
                 emailService.sendAccessRevokedEmail(user.getEmail());
                 logger.info("Access revoked and email sent to user: {}", user.getUsername());

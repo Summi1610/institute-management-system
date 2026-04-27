@@ -43,12 +43,22 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         user.setApproved(status);
-        user.setVerified(status); // keeping verified in sync for now if used elsewhere
         if (status) {
             user.setTrialExpired(false);
-            emailService.sendAccessGrantedEmail(user.getEmail());
         }
-        return userRepository.save(user);
+
+        User savedUser = userRepository.save(user);
+
+        // if (status) {
+        // try {
+        // // emailService.sendAccessGrantedEmail(savedUser.getEmail());
+        // } catch (Exception e) {
+        // logger.error("Failed to send approval email to {}: {}", savedUser.getEmail(),
+        // e.getMessage());
+        // }
+        // }
+
+        return savedUser;
     }
 
     @Override
@@ -61,7 +71,8 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public List<User> getPendingStudents() {
         return userRepository.findAll().stream()
-                .filter(u -> (u.getRole() == ERole.ROLE_STUDENT || u.getRole() == ERole.ROLE_TRAINER) && !u.isApproved())
+                .filter(u -> (u.getRole() == ERole.ROLE_STUDENT || u.getRole() == ERole.ROLE_TRAINER)
+                        && !u.isApproved())
                 .collect(Collectors.toList());
     }
 
@@ -77,7 +88,6 @@ public class AdminServiceImpl implements AdminService {
         String rawPassword = trainer.getPassword();
         trainer.setPassword(passwordEncoder.encode(rawPassword));
         trainer.setRole(ERole.ROLE_TRAINER);
-        trainer.setVerified(true);
         trainer.setApproved(true); // Admin created trainers are approved by default
         trainer.setTrialStartDate(java.time.LocalDateTime.now());
 
@@ -85,9 +95,11 @@ public class AdminServiceImpl implements AdminService {
         User actuallySavedTrainer = userRepository.save(trainer);
 
         // Sending Email with credentials
-        emailService.sendEmail(actuallySavedTrainer.getEmail(), "Welcome to CPV Management System",
-                "Your trainer account has been created.\nUsername: " + actuallySavedTrainer.getUsername() + 
-                "\nPassword: " + rawPassword);
+        // emailService.sendEmail(actuallySavedTrainer.getEmail(), "Welcome to CPV
+        // Management System",
+        // "Your trainer account has been created.\nUsername: " +
+        // actuallySavedTrainer.getUsername() +
+        // "\nPassword: " + rawPassword);
 
         return actuallySavedTrainer;
     }
@@ -159,6 +171,8 @@ public class AdminServiceImpl implements AdminService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .isApproved(user.isApproved())
+                .trialExpired(user.isTrialExpired())
                 .build();
     }
 
@@ -197,8 +211,8 @@ public class AdminServiceImpl implements AdminService {
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", studentId));
 
-        if (student.getRole() != ERole.ROLE_STUDENT || !student.isVerified()) {
-            throw new AppException("Only verified students can be added to a batch.");
+        if (student.getRole() != ERole.ROLE_STUDENT || (!student.isApproved() && student.isTrialExpired())) {
+            throw new AppException("Only approved or active trial students can be added to a batch.");
         }
 
         batch.getStudents().add(student);

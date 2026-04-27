@@ -29,19 +29,24 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
+            String headerAuth = request.getHeader("Authorization");
+            logger.info("Raw Authorization header: " + (headerAuth != null ? headerAuth : "MISSING"));
+
             String jwt = parseJwt(request);
+
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                logger.info("JWT validated for user: " + username);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                logger.info("Authentication set in SecurityContext for: " + username + " with authorities: " + userDetails.getAuthorities());
+            } else if (jwt != null) {
+                logger.warn("JWT token found but validation failed");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e.getMessage());

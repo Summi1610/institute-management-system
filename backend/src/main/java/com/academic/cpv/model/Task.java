@@ -1,5 +1,6 @@
 package com.academic.cpv.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,14 @@ public class Task {
     private String description;
 
     private LocalDateTime deadline;
+
+    private String attachmentName;
+
+    private String attachmentContentType;
+
+    @Lob
+    @JsonIgnore
+    private byte[] attachmentData;
 
     @ManyToOne
     @JoinColumn(name = "batch_id")

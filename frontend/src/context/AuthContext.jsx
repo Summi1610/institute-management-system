@@ -3,6 +3,34 @@ import api from '../services/api';
 
 const AuthContext = createContext(null);
 
+const parseJwtPayload = (token) => {
+  try {
+    const base64Payload = token.split('.')[1];
+    if (!base64Payload) {
+      return null;
+    }
+
+    const normalized = base64Payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=');
+    return JSON.parse(window.atob(padded));
+  } catch (error) {
+    return null;
+  }
+};
+
+const isTokenValid = (token) => {
+  if (!token) {
+    return false;
+  }
+
+  const payload = parseJwtPayload(token);
+  if (!payload?.exp) {
+    return false;
+  }
+
+  return payload.exp * 1000 > Date.now();
+};
+
 const normalizeUser = (user) => {
   if (!user) {
     return user;
@@ -10,7 +38,7 @@ const normalizeUser = (user) => {
 
   return {
     ...user,
-    isVerified: user.isVerified ?? user.verified ?? false
+    isApproved: user.isApproved ?? user.approved ?? false
   };
 };
 
@@ -19,10 +47,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const storedToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+
+    if (storedUser && isTokenValid(storedToken)) {
       setUser(normalizeUser(JSON.parse(storedUser)));
+    } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
     }
+
     setLoading(false);
   }, []);
 

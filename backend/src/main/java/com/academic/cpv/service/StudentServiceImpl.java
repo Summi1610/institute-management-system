@@ -4,6 +4,9 @@ import com.academic.cpv.exception.AppException;
 import com.academic.cpv.exception.ResourceNotFoundException;
 import com.academic.cpv.model.*;
 import com.academic.cpv.repository.*;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -28,14 +31,15 @@ public class StudentServiceImpl implements StudentService {
     private User getVerifiedStudent(String username) {
         User student = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
-        
-        if (student.getRole() == ERole.ROLE_STUDENT && !student.isVerified()) {
-            throw new AppException("Your account is pending verification by an administrator.");
+
+        if (!student.isApproved() && student.isTrialExpired()) {
+            throw new AppException("Your 7-day trial has expired. Please contact admin for verification.");
         }
         return student;
     }
 
     @Override
+    @Transactional
     public List<StudentTask> getMyTasks(String username) {
         User student = getVerifiedStudent(username);
         return studentTaskRepository.findByStudent(student);
@@ -45,7 +49,7 @@ public class StudentServiceImpl implements StudentService {
     public StudentTask updateTaskStatus(Long studentTaskId, ETaskStatus status, String submissionUrl) {
         StudentTask studentTask = studentTaskRepository.findById(studentTaskId)
                 .orElseThrow(() -> new ResourceNotFoundException("StudentTask", "id", studentTaskId));
-        
+
         studentTask.setStatus(status);
         if (submissionUrl != null && !submissionUrl.isEmpty()) {
             studentTask.setSubmissionUrl(submissionUrl);
@@ -55,9 +59,10 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
+    @Transactional
     public List<Material> getMyMaterials(String username) {
         User student = getVerifiedStudent(username);
-        
+
         List<Batch> myBatches = batchRepository.findAll().stream()
                 .filter(b -> b.getStudents().contains(student))
                 .collect(Collectors.toList());
