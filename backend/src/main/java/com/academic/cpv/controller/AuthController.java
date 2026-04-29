@@ -12,7 +12,7 @@ import com.academic.cpv.security.jwt.JwtUtils;
 import com.academic.cpv.security.services.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment; // Import Environment
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,8 +40,8 @@ public class AuthController {
     @Autowired
     com.academic.cpv.service.EmailService emailService;
 
-    @Autowired // Inject Environment
-    private Environment env;
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
@@ -58,12 +58,7 @@ public class AuthController {
             user.setResetPasswordTokenExpiry(java.time.LocalDateTime.now().plusHours(1));
             userRepository.save(user);
 
-            // --- MODIFICATION START ---
-            // Get the frontend URL from environment variables, default to localhost for
-            // development
-            String frontendUrl = env.getProperty("FRONTEND_URL", "http://localhost:5173");
             String resetLink = frontendUrl + "/reset-password?token=" + token;
-            // --- MODIFICATION END ---
 
             emailService.sendEmail(user.getEmail(), "Password Reset Request",
                     "To reset your password, click the link below:" + resetLink);

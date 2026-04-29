@@ -16,6 +16,8 @@ services:
     restart: always
     depends_on:
       - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
     env_file:
       - .env
     ports:
