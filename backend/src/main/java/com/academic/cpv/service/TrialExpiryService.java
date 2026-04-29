@@ -22,7 +22,6 @@ public class TrialExpiryService {
     @Autowired
     private EmailService emailService;
 
-    // Run every hour to check for expired trials
     @Scheduled(cron = "0 0 * * * *")
     public void checkTrialExpirations() {
         logger.info("Checking for expired trials...");

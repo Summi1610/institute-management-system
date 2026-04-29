@@ -37,6 +37,9 @@ frontend/.eslintcache
 .DS_Store
 Thumbs.db
 
+# Config
+backend/src/main/resources/application-dev.properties
+
 # Docker
 .env
 backend/.m2/

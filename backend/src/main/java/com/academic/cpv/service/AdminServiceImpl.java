@@ -49,14 +49,14 @@ public class AdminServiceImpl implements AdminService {
 
         User savedUser = userRepository.save(user);
 
-        // if (status) {
-        // try {
-        // // emailService.sendAccessGrantedEmail(savedUser.getEmail());
-        // } catch (Exception e) {
-        // logger.error("Failed to send approval email to {}: {}", savedUser.getEmail(),
-        // e.getMessage());
-        // }
-        // }
+        if (status) {
+            try {
+                emailService.sendAccessGrantedEmail(savedUser.getEmail());
+            } catch (Exception e) {
+                logger.error("Failed to send approval email to {}: {}", savedUser.getEmail(),
+                        e.getMessage());
+            }
+        }
 
         return savedUser;
     }
@@ -95,11 +95,10 @@ public class AdminServiceImpl implements AdminService {
         User actuallySavedTrainer = userRepository.save(trainer);
 
         // Sending Email with credentials
-        // emailService.sendEmail(actuallySavedTrainer.getEmail(), "Welcome to CPV
-        // Management System",
-        // "Your trainer account has been created.\nUsername: " +
-        // actuallySavedTrainer.getUsername() +
-        // "\nPassword: " + rawPassword);
+        emailService.sendEmail(actuallySavedTrainer.getEmail(), "Welcome to CPV Management System",
+                "Your trainer account has been created.\nUsername: " +
+                        actuallySavedTrainer.getUsername() +
+                        "\nPassword: " + rawPassword);
 
         return actuallySavedTrainer;
     }
