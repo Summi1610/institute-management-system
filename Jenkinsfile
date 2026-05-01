@@ -5,33 +5,25 @@ pipeline {
 
         stage('Pull Latest Code') {
             steps {
-                dir('/opt/institute-management-system') {
-                    sh 'git pull origin main'
-                }
+                sh 'cd /opt/institute-management-system && git pull origin master'
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                dir('/opt/institute-management-system') {
-                    sh 'DOCKER_BUILDKIT=0 docker-compose build'
-                }
+                sh 'cd /opt/institute-management-system && DOCKER_BUILDKIT=0 docker-compose build'
             }
         }
 
         stage('Stop Old Containers') {
             steps {
-                dir('/opt/institute-management-system') {
-                    sh 'docker-compose down || true'
-                }
+                sh 'cd /opt/institute-management-system && docker-compose down || true'
             }
         }
 
         stage('Deploy New Containers') {
             steps {
-                dir('/opt/institute-management-system') {
-                    sh 'docker-compose up -d'
-                }
+                sh 'cd /opt/institute-management-system && docker-compose up -d'
             }
         }
     }
