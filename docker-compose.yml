@@ -16,10 +16,16 @@ services:
     restart: always
     depends_on:
       - postgres
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
     env_file:
       - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/institute_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=yourpassword
+      - JWT_SECRET=mySecretKey123456789012345678901234567890AbcDefGhiJklMnoPqrStuVwxYz
+      - JWT_EXPIRATION=86400000
+      - FRONTEND_URL=http://3.110.29.9
     ports:
       - "8080:8080"
 
